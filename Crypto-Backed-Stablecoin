@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract StablecoinProtocol is ERC20 {
+    mapping(address => uint256) public collateral;
+    uint256 public collateralizationRatio = 150;  // 150%
+
+    constructor() ERC20("CryptoStable", "CST") {}
+
+    function depositCollateral() public payable {
+        require(msg.value > 0, "No ETH sent");
+        collateral[msg.sender] += msg.value;
+    }
+
+    function mintStablecoin(uint256 amount) public {
+        require(collateral[msg.sender] * 100 / amount >= collateralizationRatio, "Insufficient collateral");
+        _mint(msg.sender, amount);
+    }
+
+    function burnStablecoin(uint256 amount) public {
+        require(balanceOf(msg.sender) >= amount, "Insufficient balance");
+        _burn(msg.sender, amount);
+        payable(msg.sender).transfer(amount * collateralizationRatio / 100);
+    }
+}
